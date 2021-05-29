@@ -2,10 +2,14 @@ from setuptools import setup
 
 dependencies = [
     "blspy==1.0.2",  # Signature library
-    "chiavdf==1.0.1",  # timelord and vdf verification
+    "chiavdf==1.0.2",  # timelord and vdf verification
     "chiabip158==1.0",  # bip158-style wallet filters
+<<<<<<< HEAD
     # "chiapos==1.0.2",  # proof of space
     "chiapos1==1.0.3.dev10",  # proof of space
+=======
+    "chiapos==1.0.3",  # proof of space
+>>>>>>> 4f64bb9baa70b41bc37b8e962610087bf2af437c
     "clvm==0.9.6",
     "clvm_rs==0.1.7",
     "clvm_tools==0.4.3",
@@ -24,6 +28,7 @@ dependencies = [
     "sortedcontainers==2.3.0",  # For maintaining sorted mempools
     "websockets==8.1.0",  # For use in wallet RPC and electron UI
     "click==7.1.2",  # For the CLI
+    "dnspython==2.1.0",  # Query DNS seeds
 ]
 
 upnp_dependencies = [
