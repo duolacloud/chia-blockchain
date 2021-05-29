@@ -6,6 +6,7 @@ from typing import List, Optional, Tuple
 
 from blspy import AugSchemeMPL, G1Element, PrivateKey
 from chiapos import DiskPlotter
+from chiapos import PipelineDiskPlotter
 
 from chia.plotting.plot_tools import add_plot_directory, stream_plot_info_ph, stream_plot_info_pk
 from chia.types.blockchain_format.proof_of_space import ProofOfSpace
@@ -160,21 +161,55 @@ def create_plots(args, root_path, use_datetime=True, test_private_keys: Optional
         if not full_path.exists():
             log.info(f"Starting plot {i + 1}/{num}")
             # Creates the plot. This will take a long time for larger plots.
-            plotter: DiskPlotter = DiskPlotter()
-            plotter.create_plot_disk(
-                str(args.tmp_dir),
-                str(args.tmp2_dir),
-                str(args.final_dir),
-                filename,
-                args.size,
-                plot_memo,
-                plot_id,
-                args.buffer,
-                args.buckets,
-                args.stripe_size,
-                args.num_threads,
-                args.nobitfield,
-            )
+            
+            if args.phase == 0:
+              plotter: DiskPlotter = DiskPlotter()
+              plotter.create_plot_disk(
+                  str(args.tmp_dir),
+                  str(args.tmp2_dir),
+                  str(args.final_dir),
+                  filename,
+                  args.size,
+                  plot_memo,
+                  plot_id,
+                  args.buffer,
+                  args.buckets,
+                  args.stripe_size,
+                  args.num_threads,
+                  args.nobitfield,
+              )
+            elif args.phase == 1:
+              plotter: PipelineDiskPlotter = PipelineDiskPlotter()
+              plotter.create_plot_disk_phase1(
+                  str(args.tmp_dir),
+                  str(args.tmp2_dir),
+                  str(args.final_dir),
+                  filename,
+                  args.size,
+                  plot_memo,
+                  plot_id,
+                  args.buffer,
+                  args.buckets,
+                  args.stripe_size,
+                  args.num_threads,
+                  args.nobitfield,
+              )
+            elif args.phase == 2:
+              plotter: PipelineDiskPlotter = PipelineDiskPlotter()
+              plotter.create_plot_disk_phase234(
+                  str(args.tmp_dir),
+                  str(args.tmp2_dir),
+                  str(args.final_dir),
+                  filename,
+                  args.size,
+                  plot_memo,
+                  plot_id,
+                  args.buffer,
+                  args.buckets,
+                  args.stripe_size,
+                  args.nobitfield,
+              )
+
             finished_filenames.append(filename)
         else:
             log.info(f"Plot {filename} already exists")

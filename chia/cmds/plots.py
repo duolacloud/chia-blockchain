@@ -81,6 +81,7 @@ def plots_cmd(ctx: click.Context):
 @click.option(
     "-x", "--exclude_final_dir", help="Skips adding [final dir] to harvester for farming", default=False, is_flag=True
 )
+@click.option("-h", "--phase", help="phase", type=int, default=0)
 @click.pass_context
 def create_cmd(
     ctx: click.Context,
@@ -101,6 +102,7 @@ def create_cmd(
     memo: str,
     nobitfield: bool,
     exclude_final_dir: bool,
+    phase: int,
 ):
     from chia.plotting.create_plots import create_plots
 
@@ -123,6 +125,7 @@ def create_cmd(
             self.memo = memo
             self.nobitfield = nobitfield
             self.exclude_final_dir = exclude_final_dir
+            self.phase = phase
 
     if size < 32 and not override_k:
         print("k=32 is the minimum size for farming.")

@@ -4,7 +4,7 @@ from pathlib import Path
 from typing import Dict, List
 
 from blspy import G1Element
-from chiapos import Verifier
+from chiapos1 import Verifier
 
 from chia.plotting.plot_tools import find_duplicate_plot_IDs, get_plot_filenames, load_plots, parse_plot_info
 from chia.util.config import load_config
