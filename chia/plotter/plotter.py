@@ -92,8 +92,8 @@ def run_daemon_cmd(ctx: click.Context) -> None:
 @click.option("-2", "--tmp2_dir", help="Second temporary directory for plotting files", type=click.Path(), default=None)
 @click.option(
     "-d",
-    "--final_dir",
-    help="Final directory for plots (relative or absolute)",
+    "--filename",
+    help="filename for plot (relative or absolute)",
     type=click.Path(),
     default=Path("."),
     show_default=True,
@@ -101,9 +101,6 @@ def run_daemon_cmd(ctx: click.Context) -> None:
 @click.option("-i", "--plotid", help="PlotID in hex for reproducing plots (debugging only)", type=str, default=None)
 @click.option("-m", "--memo", help="Memo in hex for reproducing plots (debugging only)", type=str, default=None)
 @click.option("-e", "--nobitfield", help="Disable bitfield", default=False, is_flag=True)
-@click.option(
-    "-x", "--exclude_final_dir", help="Skips adding [final dir] to harvester for farming", default=False, is_flag=True
-)
 @click.option("-h", "--phase", help="phase", type=int, default=0)
 @click.pass_context
 def create_cmd(
@@ -119,11 +116,10 @@ def create_cmd(
     pool_public_key: str,
     tmp_dir: str,
     tmp2_dir: str,
-    final_dir: str,
+    filename: str,
     plotid: str,
     memo: str,
     nobitfield: bool,
-    exclude_final_dir: bool,
     phase: int,
 ):
     from chia.plotting.create_plot import create_plot
@@ -141,11 +137,10 @@ def create_cmd(
             self.pool_public_key = pool_public_key
             self.tmp_dir = Path(tmp_dir)
             self.tmp2_dir = Path(tmp2_dir) if tmp2_dir else None
-            self.final_dir = Path(final_dir)
+            self.filename = Path(filename)
             self.plotid = plotid
             self.memo = memo
             self.nobitfield = nobitfield
-            self.exclude_final_dir = exclude_final_dir
             self.phase = phase
 
     if size < 32 and not override_k:
@@ -156,7 +151,6 @@ def create_cmd(
         print("Error: The minimum k size allowed from the cli is k=25.")
         sys.exit(1)
 
-    print('create_plot')
     create_plot(Params(), ctx.obj["root_path"])
 
 

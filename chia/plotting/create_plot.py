@@ -44,7 +44,7 @@ def get_pool_public_key(alt_fingerprint: Optional[int] = None) -> G1Element:
     return master_sk_to_pool_sk(sk_ent[0]).get_g1()
 
 
-def create_plot(args, root_path, use_datetime=True, test_private_keys: Optional[List] = None):
+def create_plot(args, root_path, test_private_keys: Optional[List] = None):
     config_filename = config_path_for_filename(root_path, "config.yaml")
     config = load_config(root_path, config_filename)
 
@@ -101,8 +101,12 @@ def create_plot(args, root_path, use_datetime=True, test_private_keys: Optional[
         mkdir(args.tmp2_dir)
         tmp2_dir_created = True
 
-    mkdir(args.final_dir)
+    full_path: Path = args.filename
+    filename = full_path.name
+    final_dir = full_path.cwd()
+    mkdir(final_dir)
 
+    print(full_path, full_path.exists())
     
     # Generate a random master secret key
     if test_private_keys is not None:
@@ -137,25 +141,6 @@ def create_plot(args, root_path, use_datetime=True, test_private_keys: Optional[
 
     dt_string = datetime.now().strftime("%Y-%m-%d-%H-%M")
 
-    if use_datetime:
-        filename: str = f"plot-k{args.size}-{dt_string}-{plot_id}.plot"
-    else:
-        filename = f"plot-k{args.size}-{plot_id}.plot"
-    full_path: Path = args.final_dir / filename
-
-    resolved_final_dir: str = str(Path(args.final_dir).resolve())
-    plot_directories_list: str = config["harvester"]["plot_directories"]
-
-    if args.exclude_final_dir:
-        log.info(f"NOT adding directory {resolved_final_dir} to harvester for farming")
-        if resolved_final_dir in plot_directories_list:
-            log.warning(f"Directory {resolved_final_dir} already exists for harvester, please remove it manually")
-    else:
-        if resolved_final_dir not in plot_directories_list:
-            # Adds the directory to the plot directories if it is not present
-            log.info(f"Adding directory {resolved_final_dir} to harvester for farming")
-            config = add_plot_directory(resolved_final_dir, root_path)
-
     if not full_path.exists():
         log.info(f"Starting plot")
         # Creates the plot. This will take a long time for larger plots.
@@ -165,7 +150,7 @@ def create_plot(args, root_path, use_datetime=True, test_private_keys: Optional[
           plotter.create_plot_disk(
               str(args.tmp_dir),
               str(args.tmp2_dir),
-              str(args.final_dir),
+              str(final_dir),
               filename,
               args.size,
               plot_memo,
@@ -197,11 +182,9 @@ def create_plot(args, root_path, use_datetime=True, test_private_keys: Optional[
           plotter.create_plot_disk_phase234(
               str(args.tmp_dir),
               str(args.tmp2_dir),
-              str(args.final_dir),
+              str(final_dir),
               filename,
               args.size,
-              plot_memo,
-              plot_id,
               args.buffer,
               args.buckets,
               args.stripe_size,

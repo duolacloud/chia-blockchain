@@ -5,7 +5,7 @@ dependencies = [
     "chiavdf==1.0.2",  # timelord and vdf verification
     "chiabip158==1.0",  # bip158-style wallet filters
     # "chiapos==1.0.2",  # proof of space
-    "chiapos1==1.0.3.dev10",  # proof of space
+    "chiapos1==1.0.3.dev11",  # proof of space
     "clvm==0.9.6",
     "clvm_rs==0.1.7",
     "clvm_tools==0.4.3",

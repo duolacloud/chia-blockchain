@@ -106,8 +106,6 @@ def create_cmd(
 ):
     from chia.plotting.create_plots import create_plots
 
-    print('fuck plots create')
-
     class Params(object):
         def __init__(self):
             self.size = size

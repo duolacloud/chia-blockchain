@@ -202,8 +202,6 @@ def create_plots(args, root_path, use_datetime=True, test_private_keys: Optional
                   str(args.final_dir),
                   filename,
                   args.size,
-                  plot_memo,
-                  plot_id,
                   args.buffer,
                   args.buckets,
                   args.stripe_size,
