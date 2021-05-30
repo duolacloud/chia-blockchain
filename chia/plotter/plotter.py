@@ -1,31 +1,43 @@
-import logging
-import sys
-from pathlib import Path
-
 import click
 
+from chia import __version__
+from chia.util.default_root import DEFAULT_ROOT_PATH
+from pathlib import Path
+
+CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"])
+
 DEFAULT_STRIPE_SIZE = 65536
-log = logging.getLogger(__name__)
 
 
-def show_plots(root_path: Path):
-    from chia.plotting.plot_tools import get_plot_directories
+def monkey_patch_click() -> None:
+    # this hacks around what seems to be an incompatibility between the python from `pyinstaller`
+    # and `click`
+    #
+    # Not 100% sure on the details, but it seems that `click` performs a check on start-up
+    # that `codecs.lookup(locale.getpreferredencoding()).name != 'ascii'`, and refuses to start
+    # if it's not. The python that comes with `pyinstaller` fails this check.
+    #
+    # This will probably cause problems with the command-line tools that use parameters that
+    # are not strict ascii. The real fix is likely with the `pyinstaller` python.
 
-    print("Directories where plots are being searched for:")
-    print("Note that subdirectories must be added manually")
-    print(
-        "Add with 'chia plots add -d [dir]' and remove with"
-        + " 'chia plots remove -d [dir]'"
-        + " Scan and check plots with 'chia plots check'"
-    )
-    print()
-    for str_path in get_plot_directories(root_path):
-        print(f"{str_path}")
+    import click.core
+
+    click.core._verify_python3_env = lambda *args, **kwargs: 0  # type: ignore
 
 
-@click.group("plots", short_help="Manage your plots")
+@click.group(
+    help=f"\n  Manage chia blockchain infrastructure ({__version__})\n",
+    epilog="Try 'chia start node', 'chia netspace -d 192', or 'chia show -s'",
+    context_settings=CONTEXT_SETTINGS,
+)
+@click.option("--root-path", default=DEFAULT_ROOT_PATH, help="Config file root", type=click.Path(), show_default=True)
 @click.pass_context
-def plots_cmd(ctx: click.Context):
+def cli(ctx: click.Context, root_path: str) -> None:
+    from pathlib import Path
+
+    ctx.ensure_object(dict)
+    ctx.obj["root_path"] = Path(root_path)
+
     """Create, add, remove and check your plots"""
     from chia.util.chia_logging import initialize_logging
 
@@ -34,11 +46,22 @@ def plots_cmd(ctx: click.Context):
         raise RuntimeError("Please initialize (or migrate) your config directory with 'chia init'")
     initialize_logging("", {"log_stdout": True}, root_path)
 
+@cli.command("version", short_help="Show chia version")
+def version_cmd() -> None:
+    print(__version__)
 
-@plots_cmd.command("create", short_help="Create plots")
+
+@cli.command("run_daemon", short_help="Runs chia daemon")
+@click.pass_context
+def run_daemon_cmd(ctx: click.Context) -> None:
+    from chia.daemon.server import async_run_daemon
+    import asyncio
+
+    asyncio.get_event_loop().run_until_complete(async_run_daemon(ctx.obj["root_path"]))
+
+@click.command("create", short_help="Create plots")
 @click.option("-k", "--size", help="Plot size", type=int, default=32, show_default=True)
 @click.option("--override-k", help="Force size smaller than 32", default=False, show_default=True, is_flag=True)
-@click.option("-n", "--num", help="Number of plots or challenges", type=int, default=1, show_default=True)
 @click.option("-b", "--buffer", help="Megabytes for sort/plot buffer", type=int, default=3389, show_default=True)
 @click.option("-r", "--num_threads", help="Number of threads to use", type=int, default=2, show_default=True)
 @click.option("-u", "--buckets", help="Number of buckets", type=int, default=128, show_default=True)
@@ -87,7 +110,6 @@ def create_cmd(
     ctx: click.Context,
     size: int,
     override_k: bool,
-    num: int,
     buffer: int,
     num_threads: int,
     buckets: int,
@@ -104,14 +126,11 @@ def create_cmd(
     exclude_final_dir: bool,
     phase: int,
 ):
-    from chia.plotting.create_plots import create_plots
-
-    print('fuck plots create')
+    from chia.plotting.create_plot import create_plot
 
     class Params(object):
         def __init__(self):
             self.size = size
-            self.num = num
             self.buffer = buffer
             self.num_threads = num_threads
             self.buckets = buckets
@@ -137,65 +156,17 @@ def create_cmd(
         print("Error: The minimum k size allowed from the cli is k=25.")
         sys.exit(1)
 
-    create_plots(Params(), ctx.obj["root_path"])
+    print('create_plot')
+    create_plot(Params(), ctx.obj["root_path"])
 
 
-@plots_cmd.command("check", short_help="Checks plots")
-@click.option("-n", "--num", help="Number of plots or challenges", type=int, default=None)
-@click.option(
-    "-g",
-    "--grep_string",
-    help="Shows only plots that contain the string in the filename or directory name",
-    type=str,
-    default=None,
-)
-@click.option("-l", "--list_duplicates", help="List plots with duplicate IDs", default=False, is_flag=True)
-@click.option("--debug-show-memo", help="Shows memo to recreate the same exact plot", default=False, is_flag=True)
-@click.option("--challenge-start", help="Begins at a different [start] for -n [challenges]", type=int, default=None)
-@click.pass_context
-def check_cmd(
-    ctx: click.Context, num: int, grep_string: str, list_duplicates: bool, debug_show_memo: bool, challenge_start: int
-):
-    from chia.plotting.check_plots import check_plots
-
-    check_plots(ctx.obj["root_path"], num, challenge_start, grep_string, list_duplicates, debug_show_memo)
+cli.add_command(create_cmd)
 
 
-@plots_cmd.command("add", short_help="Adds a directory of plots")
-@click.option(
-    "-d",
-    "--final_dir",
-    help="Final directory for plots (relative or absolute)",
-    type=click.Path(),
-    default=".",
-    show_default=True,
-)
-@click.pass_context
-def add_cmd(ctx: click.Context, final_dir: str):
-    from chia.plotting.plot_tools import add_plot_directory
-
-    add_plot_directory(Path(final_dir), ctx.obj["root_path"])
-    print(f'Added plot directory "{final_dir}".')
+def main() -> None:
+    monkey_patch_click()
+    cli()  # pylint: disable=no-value-for-parameter
 
 
-@plots_cmd.command("remove", short_help="Removes a directory of plots from config.yaml")
-@click.option(
-    "-d",
-    "--final_dir",
-    help="Final directory for plots (relative or absolute)",
-    type=click.Path(),
-    default=".",
-    show_default=True,
-)
-@click.pass_context
-def remove_cmd(ctx: click.Context, final_dir: str):
-    from chia.plotting.plot_tools import remove_plot_directory
-
-    remove_plot_directory(Path(final_dir), ctx.obj["root_path"])
-    print(f'Removed plot directory "{final_dir}".')
-
-
-@plots_cmd.command("show", short_help="Shows the directory of current plots")
-@click.pass_context
-def show_cmd(ctx: click.Context):
-    show_plots(ctx.obj["root_path"])
+if __name__ == "__main__":
+    main()
