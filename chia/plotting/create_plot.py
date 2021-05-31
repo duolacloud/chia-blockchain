@@ -106,8 +106,9 @@ def create_plot(args, root_path, test_private_keys: Optional[List] = None):
     final_dir = full_path.cwd()
     mkdir(final_dir)
 
-    print(full_path, full_path.exists())
-    
+    print('full_path: ', full_path, full_path.exists())
+    print('final_dir: ', str(final_dir))
+
     # Generate a random master secret key
     if test_private_keys is not None:
         assert len(test_private_keys) == num
@@ -166,7 +167,7 @@ def create_plot(args, root_path, test_private_keys: Optional[List] = None):
           plotter.create_plot_disk_phase1(
               str(args.tmp_dir),
               str(args.tmp2_dir),
-              str(args.final_dir),
+              str(final_dir),
               filename,
               args.size,
               plot_memo,
