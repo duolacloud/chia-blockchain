@@ -103,7 +103,7 @@ def create_plot(args, root_path, test_private_keys: Optional[List] = None):
 
     full_path: Path = args.filename
     filename = full_path.name
-    final_dir = full_path.cwd()
+    final_dir = full_path.parent
     mkdir(final_dir)
 
     print('full_path: ', full_path, full_path.exists())
